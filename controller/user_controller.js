@@ -33,7 +33,7 @@ class UserController {
     }
 
     async user_withdrawal(req, res) {
-        const { user_id,  amount, account_number, ifsc_code, upi_id } = req.body;
+        const { user_id, amount, account_number, ifsc_code, upi_id } = req.body;
 
         try {
             const [wallet] = await sequelize.query(
@@ -50,7 +50,7 @@ class UserController {
                 `INSERT INTO withdrawal_requests (user_id,  amount, account_number, ifsc_code, upi_id)
              VALUES (:user_id,  :amount, :account_number, :ifsc_code, :upi_id)`,
                 {
-                    replacements: { user_id,  amount, account_number, ifsc_code, upi_id }
+                    replacements: { user_id, amount, account_number, ifsc_code, upi_id }
                 }
             );
 
@@ -65,6 +65,74 @@ class UserController {
             console.error(error);
             res.status(500).json({ error: error.message });
         }
+    }
+
+    async plans(req, res) {
+        try {
+            const [get_plans] = await sequelize.query(`select * from plans`);
+            res.status(200).json(get_plans);
+
+        } catch (error) {
+            console.log(error)
+            res.status(500).json({ error: error.message });
+        }
+    }
+
+    async user_plans(req, res) {
+        try {
+            const [user_plans] = await sequelize.query(`select * from user_plans where user_id = '${req.user.userId}'`)
+            res.status(200).json(user_plans);
+        } catch (error) {
+            console.log(error);
+            res.status(500).json({ error: error.message });
+        }
+    }
+
+    async user_wallet(req, res) {
+        try {
+            const [walletDetails] = await sequelize.query(
+                `SELECT * FROM wallets WHERE user_id = '${req.user.userId}'`,
+            );
+
+            if (!walletDetails.length) {
+                return res.status(404).json({ message: 'Wallet not found' });
+            }
+
+            res.status(200).json(walletDetails[0]);
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({ error: error.message });
+        }
+    }
+    async get_all_payment_requests(req, res) {
+        try {
+
+            const [get_data] = await sequelize.query(`select * from withdrawal_requests where user_id = '${req.user.userId}'`)
+            if (!get_data.length) {
+                return res.status(404).json({ message: 'withdrawal_requests not found' });
+            }
+            res.status(200).json(get_data);
+
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({ error: error.message });
+        }
+    }
+
+    async get_payment_details(req, res) {
+        try {
+            const id = req.body.id;
+            const [payment_dta] = await sequelize.query(`select * from withdrawal_requests where id = '${id}'`)
+            if (!payment_dta.length) {
+                return res.status(400).json({ message: 'payment withdrawal id not found' });
+            }
+            res.status(200).json(payment_dta);
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({ error: error.message });
+        }
+
+
     }
 
 }
