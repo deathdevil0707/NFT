@@ -36,6 +36,16 @@ export const registerUser = async (req, res) => {
         );
         console.log("result",result)
 
+        await sequelize.query(
+            `INSERT INTO wallets (user_id, balance)
+             VALUES (:userId, 0)`,
+            {
+                replacements: {
+                    userId: result[0].id, // Use the newly created user's ID
+                }
+            }
+        );
+
         if (referrer) {
             await sequelize.query(`UPDATE users SET referral_count = referral_count + 1 WHERE id = ${referrer.id}`, []);
             await sequelize.query(
@@ -50,7 +60,7 @@ export const registerUser = async (req, res) => {
             );
         }
 
-        const token = jwt.sign({ userId: result[0].id }, config.jwt_secret, { expiresIn: '1h' });
+        const token = jwt.sign({ userId: result[0].id , userName : result[0].username }, config.jwt_secret, { expiresIn: '1h' });
         console.log("token",token)
 
         res.status(201).json({
@@ -75,7 +85,7 @@ export const loginUser = async (req, res) => {
             return res.status(400).json({ message: 'Invalid email or password' });
         }
 
-        const token = jwt.sign({ userId: user.id }, config.jwt_secret, { expiresIn: '1h' });
+        const token = jwt.sign({ userId: user.id , userName : user.username } ,config.jwt_secret, { expiresIn: '1h' });
         res.json({ message: 'Login successful', token });
     } catch (error) {
         console.log(error)

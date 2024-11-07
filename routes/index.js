@@ -1,6 +1,8 @@
 import { Router } from "express";
 import { loginUser ,registerUser} from "../controller/index.js";
-import { authenticateToken } from "../middlewares/index.js";
+import { authenticateToken , verifyAdmin } from "../middlewares/index.js";
+import admin_router from "./admin_routes.js";
+import user_router from "./user_routes.js";
 
 const router = Router();
 
@@ -10,5 +12,9 @@ router.post('/login', loginUser);
 router.get('/dashboard', authenticateToken, (req, res) => {
     res.json({ message: `Welcome to the dashboard, User ${req.user.userId}!` });
 });
+
+router.use('/admin', verifyAdmin, admin_router)
+router.use('/user',authenticateToken, user_router)
+
 
 export default router;
