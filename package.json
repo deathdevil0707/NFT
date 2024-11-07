@@ -11,7 +11,7 @@
     "sequelize": "^6.37.5",
     "uuid": "^11.0.2"
   },
-   "scripts": {     
+  "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js"
   }
