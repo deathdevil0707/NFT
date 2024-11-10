@@ -31,7 +31,6 @@ class UserController {
             res.status(500).json({ error: error.message });
         }
     }
-
     async user_withdrawal(req, res) {
         const { user_id, amount, account_number, ifsc_code, upi_id } = req.body;
 
@@ -66,7 +65,6 @@ class UserController {
             res.status(500).json({ error: error.message });
         }
     }
-
     async plans(req, res) {
         try {
             const [get_plans] = await sequelize.query(`select * from plans`);
@@ -77,7 +75,6 @@ class UserController {
             res.status(500).json({ error: error.message });
         }
     }
-
     async user_plans(req, res) {
         try {
             const [user_plans] = await sequelize.query(`select * from user_plans where user_id = '${req.user.userId}'`)
@@ -87,7 +84,6 @@ class UserController {
             res.status(500).json({ error: error.message });
         }
     }
-
     async user_wallet(req, res) {
         try {
             const [walletDetails] = await sequelize.query(
@@ -118,7 +114,6 @@ class UserController {
             res.status(500).json({ error: error.message });
         }
     }
-
     async get_payment_details(req, res) {
         try {
             const id = req.body.id;

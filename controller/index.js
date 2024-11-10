@@ -17,11 +17,11 @@ const transporter = nodemailer.createTransport({
 const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
 
 export const registerUser = async (req, res) => {
-    const { username, email, password } = req.body;
-    const referrerCode = req.query.ref;
+    const { username, email, password ,referrerCode} = req.body;
+    // const referrerCode = req.query.ref;
 
     try {
-        const passwordHash = await bcrypt.hash(password, 10);
+        const passwordHash = await bcrypt.hash(password, 10)
         const referralCode = `${username}_${uuidv4().slice(0, 8)}`;
         let referrer = null;
 
@@ -109,7 +109,6 @@ export const registerUser = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
-
 export const verify_otp = async (req,res) =>{
     const { email, otp } = req.body;
 
@@ -158,17 +157,118 @@ export const loginUser = async (req, res) => {
     const { email, password } = req.body;
 
     try {
-        const [userQuery] = await sequelize.query(`SELECT * FROM users WHERE email = '${email}'`, );
+        const [userQuery] = await sequelize.query(`SELECT * FROM users WHERE email = '${email}'`);
         const user = userQuery[0];
+        console.log(user)
+
         if (!user || !(await bcrypt.compare(password, user.password_hash))) {
             return res.status(400).json({ message: 'Invalid email or password' });
         }
 
-        const token = jwt.sign({ userId: user.id , userName : user.username } ,config.jwt_secret, { expiresIn: '1h' });
-        res.json({ message: 'Login successful', token });
+        const token = jwt.sign({ userId: user.id , userName : user.username } ,config.jwt_secret, { expiresIn: '8h' });
+        res.json({ message: 'Login successful', token ,user});
     } catch (error) {
         console.log(error)
         res.status(500).json({ error: error.message });
     }
 };
+
+export const forgotPassword = async (req, res) => {
+    const { email } = req.body;
+
+    try {
+        // Check if the user exists
+        const [userQuery] = await sequelize.query(
+            `SELECT id FROM users WHERE email = '${email}'`,
+        );
+
+        if (userQuery.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        const userId = userQuery[0].id;
+
+        // Generate OTP
+        const otpCode = generateOTP();
+        const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes expiration
+
+        // Store the OTP in the database
+        await sequelize.query(
+            `INSERT INTO otps (email, otp_code, expires_at, used) 
+             VALUES (:email, :otpCode, :expiresAt, false)`,
+            {
+                replacements: {
+                    email,
+                    otpCode,
+                    expiresAt: expiresAt.toISOString()
+                }
+            }
+        );
+
+        // Send OTP via email
+        try {
+            const emailResponse = await transporter.sendMail({
+                from: 'shubhankaragarwal0707@gmail.com',
+                to: email,
+                subject: 'Password Reset OTP',
+                text: `Your OTP for password reset is ${otpCode}. It will expire in 15 minutes.`
+            });
+            console.log('OTP email sent successfully:', emailResponse);
+        } catch (emailError) {
+            console.error('Error sending OTP email:', emailError);
+            throw new Error('Failed to send OTP email. Please try again.');
+        }
+
+        res.status(200).json({ message: 'OTP sent to your email for password reset' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: error.message });
+    }
+};
+
+export const verifyOtpAndResetPassword = async (req, res) => {
+    const { email, otp, newPassword } = req.body;
+
+    try {
+        // Check if OTP is valid
+        const [otpQuery] = await sequelize.query(
+            `SELECT * FROM otps WHERE email = '${email}' AND otp_code = '${otp}' AND used = false`
+        );
+        console.log(otpQuery)
+
+        if (otpQuery.length === 0) {
+            return res.status(400).json({ error: 'Invalid or expired OTP' });
+        }
+
+        const otpRecord = otpQuery[0];
+
+        // Check if OTP is expired
+       
+        if (new Date(otpRecord.expires_at) < new Date()) {
+            return res.status(400).json({ error: 'OTP has expired' });
+        }
+
+        // Mark OTP as used
+        await sequelize.query(
+            `UPDATE otps SET used = true WHERE email = '${email}' AND otp_code = '${otp}'`
+        );
+
+        // Hash the new password
+        const passwordHash = await bcrypt.hash(newPassword, 10);
+
+        // Update the user's password
+        await sequelize.query(
+            `UPDATE users SET password_hash = '${passwordHash}' WHERE email = '${email}'`
+        );
+        const [user] = await sequelize.query(`select * from users where email = '${email}'`)
+
+        res.status(200).json({ message: 'Password has been reset successfully' , user : user[0]});
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: error.message });
+    }
+};
+
+
+
 

@@ -23,7 +23,6 @@ class AdminApiControler {
         }
 
     }
-
     async add_user_amount (req,res) {
         const { user_id, amount } = req.body;
         const [data] = await sequelize.query(`select * from wallets where user_id = '${user_id}'`)
@@ -41,7 +40,6 @@ class AdminApiControler {
             res.status(500).json({ error: error.message });
         }
     }
-
     async get_all_users(req, res) {
         try {
             const [users] = await sequelize.query(`SELECT * FROM users`);
@@ -68,7 +66,6 @@ class AdminApiControler {
             res.status(500).json({ error: error.message });
         }
     }
-
     async get_withdrawal(req, res) {
 
         try {
@@ -79,11 +76,12 @@ class AdminApiControler {
             res.status(500).json({ error: error.message });
         }
     }
-
     async wallet_details(req, res) {
         const { user_id } = req.body;
 
         try {
+            const [userQuery] = await sequelize.query(`SELECT * FROM users WHERE id = '${user_id}'`, );
+
             const [walletDetails] = await sequelize.query(
                 `SELECT * FROM wallets WHERE user_id = :user_id`,
                 { replacements: { user_id } }
@@ -93,7 +91,7 @@ class AdminApiControler {
                 return res.status(404).json({ message: 'Wallet not found' });
             }
 
-            res.status(200).json(walletDetails[0]);
+            res.status(200).json({ ...walletDetails[0], ...userQuery[0] });
         } catch (error) {
             console.error(error);
             res.status(500).json({ error: error.message });
