@@ -29,12 +29,13 @@ class AdminApiControler {
 
         const balance = Number(amount) + Number(data[0].balance)
         try {
-            await sequelize.query(
-                `UPDATE wallets SET balance = balance + :amount WHERE user_id = :user_id`,
+            const [data1] = await sequelize.query(
+                `UPDATE wallets SET balance = balance + :amount WHERE user_id = :user_id returning balance`,
                 { replacements: { user_id, amount } }
             );
+            console.log(data1)
 
-            res.status(200).json({ message: 'Amount added to wallet successfully!' });
+            res.status(200).json({status :200, message: 'Amount added to wallet successfully!' , wallet_amount : data1[0].balance});
         } catch (error) {
             console.error(error);
             res.status(500).json({ error: error.message });
@@ -55,12 +56,31 @@ class AdminApiControler {
         const { status } = req.body; // e.g., 'approved', 'rejected'
 
         try {
-            await sequelize.query(
-                `UPDATE withdrawal_requests SET status = :status WHERE id = :id`,
-                { replacements: { status, id } }
-            );
+            const [withdrawal_data] = await sequelize.query(`SELECT * FROM withdrawal_requests WHERE id = '${id}'`);
+            const [wallet] = await sequelize.query(`select amount from wallets where user_id = '${withdrawal_data[0],user_id}'`)
 
-            res.status(200).json({ message: `Withdrawal request status updated to ${status}` });
+            if (withdrawal_data.length > 0) {
+                const { user_id, amount } = withdrawal_data[0]; // Destructure necessary fields
+            
+                // Update the withdrawal request status
+                await sequelize.query(
+                    `UPDATE withdrawal_requests SET status = :status WHERE id = :id`,
+                    { replacements: { status, id } }
+                );
+            
+                // Update the wallet balance
+                await sequelize.query(
+                    `UPDATE wallets SET balance = balance - :amount WHERE user_id = :user_id`,
+                    { replacements: { amount, user_id } }
+                );
+
+            } else {
+                console.error('No withdrawal request found with the given ID.');
+                throw new Error('Withdrawal request not found');
+            }
+            
+
+            res.status(200).json({status:201, message: `Withdrawal request status updated to ${status}` , data:{...withdrawal_data[0],wallet_amount : wallet[0].amount} });
         } catch (error) {
             console.error(error);
             res.status(500).json({ error: error.message });

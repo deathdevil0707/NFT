@@ -55,10 +55,10 @@ class UserController {
             );
 
             // Deduct the amount from the user's wallet
-            await sequelize.query(
-                `UPDATE wallets SET balance = balance - :amount WHERE user_id = :user_id`,
-                { replacements: { user_id, amount } }
-            );
+            // await sequelize.query(
+            //     `UPDATE wallets SET balance = balance - :amount WHERE user_id = :user_id`,
+            //     { replacements: { user_id, amount } }
+            // );
 
             res.status(201).json({ message: 'Withdrawal request submitted!' });
         } catch (error) {
