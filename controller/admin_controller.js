@@ -23,7 +23,7 @@ class AdminApiControler {
         }
 
     }
-    async add_user_amount (req,res) {
+    async add_user_amount(req, res) {
         const { user_id, amount } = req.body;
         const [data] = await sequelize.query(`select * from wallets where user_id = '${user_id}'`)
 
@@ -33,7 +33,7 @@ class AdminApiControler {
                 `UPDATE wallets SET balance = balance + :amount WHERE user_id = :user_id`,
                 { replacements: { user_id, amount } }
             );
-    
+
             res.status(200).json({ message: 'Amount added to wallet successfully!' });
         } catch (error) {
             console.error(error);
@@ -80,7 +80,7 @@ class AdminApiControler {
         const { user_id } = req.body;
 
         try {
-            const [userQuery] = await sequelize.query(`SELECT * FROM users WHERE id = '${user_id}'`, );
+            const [userQuery] = await sequelize.query(`SELECT * FROM users WHERE id = '${user_id}'`,);
 
             const [walletDetails] = await sequelize.query(
                 `SELECT * FROM wallets WHERE user_id = :user_id`,
@@ -109,6 +109,49 @@ class AdminApiControler {
             console.error('Error retrieving plans:', error);
             res.status(500).json({ error: 'Failed to retrieve plans' });
         }
+    }
+
+    async plan_requests(req, res) {
+        try {
+            let data = []
+            const [user_plans] = await sequelize.query(`select * from user_plans where status = 'inactive'`);
+            await Promise.all(user_plans.map(async (u) => {
+                const [plans] = await sequelize.query(`select * from plans where id = '${u.plan_id}'`)
+                console.log(u)
+                console.log(plans[0])
+                const { id, ...planWithoutId } = plans[0];
+
+                // Combine u with the rest of planWithoutId, keeping u.id
+                data.push({ ...u, ...planWithoutId });
+            }))
+            res.status(200).json({
+                message: 'data retrieved successfully!',
+                data
+            });
+        } catch (error) {
+            console.error('Error retrieving plan request data:', error);
+            res.status(500).json({ error: 'Failed to retrieve plan request data', message: error.message });
+        }
+
+    }
+
+    async plan_status_update(req, res) {
+        try {
+            const { plan_request_id } = req.body
+            const [plan_request_data] = await sequelize.query(`select * from user_plans where id = '${plan_request_id}'`)
+            const response = await sequelize.query(`update user_plans set status = 'active'`)
+            console.log(response)
+            res.status(201).json({
+                message: 'plan added to user successfully!',
+                plan_deta: plan_request_data[0]
+            });
+        } catch (error) {
+            console.log(error)
+            res.status(500).json({ error: 'Failed to update plan request data', message: error.message });
+
+        }
+
+
     }
 
 }

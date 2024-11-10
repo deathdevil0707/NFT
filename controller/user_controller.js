@@ -21,9 +21,10 @@ class UserController {
 
             // Add the selected plan for the user
             await sequelize.query(
-                `INSERT INTO user_plans (user_id, plan_id) VALUES (:user_id, :plan_id)`,
-                { replacements: { user_id, plan_id } }
+                `INSERT INTO user_plans (user_id, plan_id, status) VALUES (:user_id, :plan_id, :status)`,
+                { replacements: { user_id, plan_id, status: 'inactive' } }
             );
+            
 
             res.status(201).json({ message: 'Plan selected successfully!' });
         } catch (error) {

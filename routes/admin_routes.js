@@ -10,5 +10,8 @@ admin_router.post('/wallet_details' , admin_controller.wallet_details)
 admin_router.post('/withdrawal_requests' , admin_controller.get_withdrawal)
 admin_router.post('/status_update' , admin_controller.update_withdrawal)
 admin_router.get('/get-all-plans', admin_controller.get_plans)
+admin_router.get('/plan-requests', admin_controller.plan_requests)
+admin_router.post('/plan_status_update' , admin_controller.plan_status_update)
+
 
 export default admin_router
