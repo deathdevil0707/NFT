@@ -16,10 +16,10 @@ class AdminApiControler {
                     replacements: { name, description, amount, daily_income_rate, coin_type, required_subordinates }
                 }
             );
-            res.status(201).json({ message: 'Plan created successfully!' });
+            res.status(201).json({ status : 201 , message: 'Plan created successfully!' });
         } catch (error) {
             console.error(error);
-            res.status(500).json({ error: error.message });
+            res.status(500).json({ status : 500 ,error: error.message });
         }
 
     }
@@ -38,16 +38,16 @@ class AdminApiControler {
             res.status(200).json({status :200, message: 'Amount added to wallet successfully!' , wallet_amount : data1[0].balance});
         } catch (error) {
             console.error(error);
-            res.status(500).json({ error: error.message });
+            res.status(500).json({status: 500, error: error.message });
         }
     }
     async get_all_users(req, res) {
         try {
             const [users] = await sequelize.query(`SELECT * FROM users`);
-            res.status(200).json(users);
+            res.status(200).json({status : 200 ,users: users});
         } catch (error) {
             console.error(error);
-            res.status(500).json({ error: error.message });
+            res.status(500).json({ status : 500 ,error: error.message });
         }
     }
     //update withdrawal request from user
@@ -83,14 +83,14 @@ class AdminApiControler {
             res.status(200).json({status:201, message: `Withdrawal request status updated to ${status}` , data:{...withdrawal_data[0],wallet_amount : wallet[0].amount} });
         } catch (error) {
             console.error(error);
-            res.status(500).json({ error: error.message });
+            res.status(500).json({ status : 500 ,error: error.message });
         }
     }
     async get_withdrawal(req, res) {
 
         try {
             const [requests] = await sequelize.query(`SELECT * FROM withdrawal_requests`);
-            res.status(200).json(requests);
+            res.status(200).json({status :200 , requests});
         } catch (error) {
             console.error(error);
             res.status(500).json({ error: error.message });
@@ -111,10 +111,10 @@ class AdminApiControler {
                 return res.status(404).json({ message: 'Wallet not found' });
             }
 
-            res.status(200).json({ ...walletDetails[0], ...userQuery[0] });
+            res.status(200).json({status : 200,data : { ...walletDetails[0], ...userQuery[0] }});
         } catch (error) {
             console.error(error);
-            res.status(500).json({ error: error.message });
+            res.status(500).json({ status : 500 , error: error.message });
         }
     }
     async get_plans(req, res) {
@@ -122,12 +122,13 @@ class AdminApiControler {
             const [plans] = await sequelize.query(`SELECT * FROM plans`);
 
             res.status(200).json({
+                status:200,
                 message: 'Plans retrieved successfully!',
                 plans
             });
         } catch (error) {
             console.error('Error retrieving plans:', error);
-            res.status(500).json({ error: 'Failed to retrieve plans' });
+            res.status(500).json({ status :500 , error: 'Failed to retrieve plans' });
         }
     }
 
@@ -145,29 +146,43 @@ class AdminApiControler {
                 data.push({ ...u, ...planWithoutId });
             }))
             res.status(200).json({
+                status:200,
                 message: 'data retrieved successfully!',
                 data
             });
         } catch (error) {
             console.error('Error retrieving plan request data:', error);
-            res.status(500).json({ error: 'Failed to retrieve plan request data', message: error.message });
+            res.status(500).json({ status : 500 , error: 'Failed to retrieve plan request data', message: error.message });
         }
 
     }
 
     async plan_status_update(req, res) {
         try {
-            const { plan_request_id } = req.body
+            const { plan_request_id ,status} = req.body
             const [plan_request_data] = await sequelize.query(`select * from user_plans where id = '${plan_request_id}'`)
-            const response = await sequelize.query(`update user_plans set status = 'active'`)
+            
+            const [plans_data] = await sequelize.query(`select * from plans where id = '${plan_request_data[0].plan_id}'`)
+            console.log("plans",plans_data[0])
+            const [wallet_data] = await sequelize.query(`select * from wallets where user_id = '${plan_request_data[0].user_id}'`)
+            const balance =Number(wallet_data[0].balance) + Number(plans_data[0].amount)
+            let updated_wallet_Data;
+            if(status === 'active'){
+            [updated_wallet_Data] = await sequelize.query(`update wallets set balance = '${balance}' returning *`)
+            }
+            console.log(updated_wallet_Data)
+            const response = await sequelize.query(`update user_plans set status = '${status}' where id = '${plan_request_id}'  returning *`)
             console.log(response)
             res.status(201).json({
+                status: 201,
                 message: 'plan added to user successfully!',
-                plan_deta: plan_request_data[0]
+                plan_data: response[0],
+                plans : plans_data[0],
+                wallet : updated_wallet_Data
             });
         } catch (error) {
             console.log(error)
-            res.status(500).json({ error: 'Failed to update plan request data', message: error.message });
+            res.status(500).json({ status : 500 ,error: 'Failed to update plan request data', message: error.message });
 
         }
 

@@ -99,6 +99,7 @@ export const registerUser = async (req, res) => {
         console.log("token",token)
 
         res.status(201).json({
+            status : 201,
             message: 'User registered successfully!',
             token,
             referralLink: `http://yourapp.com/register?ref=${referralCode}`,
@@ -106,7 +107,7 @@ export const registerUser = async (req, res) => {
         });
     } catch (error) {
         console.log(error)
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ status : 500 , error: error.message });
     }
 };
 export const verify_otp = async (req,res) =>{
@@ -147,10 +148,10 @@ export const verify_otp = async (req,res) =>{
             UPDATE users SET is_verified = true WHERE email = '${email}'
         `);
 
-        res.status(200).json({ message: 'Email verified successfully' });
+        res.status(200).json({ statua : 200 , message: 'Email verified successfully' });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ status : 500 ,error: 'Internal server error' });
     }
 }
 export const loginUser = async (req, res) => {
@@ -166,10 +167,10 @@ export const loginUser = async (req, res) => {
         }
 
         const token = jwt.sign({ userId: user.id , userName : user.username } ,config.jwt_secret, { expiresIn: '8h' });
-        res.json({ message: 'Login successful', token ,user});
+        res.json({ status : 200 , message: 'Login successful', token ,user});
     } catch (error) {
         console.log(error)
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ status : 500 , error: error.message });
     }
 };
 
@@ -219,10 +220,10 @@ export const forgotPassword = async (req, res) => {
             throw new Error('Failed to send OTP email. Please try again.');
         }
 
-        res.status(200).json({ message: 'OTP sent to your email for password reset' });
+        res.status(200).json({status : 200 ,  message: 'OTP sent to your email for password reset' });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ status : 500 ,error: error.message });
     }
 };
 
@@ -262,10 +263,10 @@ export const verifyOtpAndResetPassword = async (req, res) => {
         );
         const [user] = await sequelize.query(`select * from users where email = '${email}'`)
 
-        res.status(200).json({ message: 'Password has been reset successfully' , user : user[0]});
+        res.status(200).json({status : 200 ,  message: 'Password has been reset successfully' , user : user[0]});
     } catch (error) {
         console.error(error);
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ status : 500 , error: error.message });
     }
 };
 

@@ -26,10 +26,10 @@ class UserController {
             );
             
 
-            res.status(201).json({ message: 'Plan selected successfully!' });
+            res.status(201).json({status : 200 ,  message: 'Plan selected successfully!' });
         } catch (error) {
             console.error(error);
-            res.status(500).json({ error: error.message });
+            res.status(500).json({ status : 500 , error: error.message });
         }
     }
     async user_withdrawal(req, res) {
@@ -60,29 +60,29 @@ class UserController {
             //     { replacements: { user_id, amount } }
             // );
 
-            res.status(201).json({ message: 'Withdrawal request submitted!' });
+            res.status(201).json({ status : 201 , message: 'Withdrawal request submitted!' });
         } catch (error) {
             console.error(error);
-            res.status(500).json({ error: error.message });
+            res.status(500).json({ status : 500 ,error: error.message });
         }
     }
     async plans(req, res) {
         try {
             const [get_plans] = await sequelize.query(`select * from plans`);
-            res.status(200).json(get_plans);
+            res.status(200).json({status  :200 , get_plans});
 
         } catch (error) {
             console.log(error)
-            res.status(500).json({ error: error.message });
+            res.status(500).json({status : 500 ,  error: error.message });
         }
     }
     async user_plans(req, res) {
         try {
             const [user_plans] = await sequelize.query(`select * from user_plans where user_id = '${req.user.userId}'`)
-            res.status(200).json(user_plans);
+            res.status(200).json({status : 200 ,user_plans});
         } catch (error) {
             console.log(error);
-            res.status(500).json({ error: error.message });
+            res.status(500).json({ status : 500 ,error: error.message });
         }
     }
     async user_wallet(req, res) {
@@ -95,10 +95,10 @@ class UserController {
                 return res.status(404).json({ message: 'Wallet not found' });
             }
 
-            res.status(200).json(walletDetails[0]);
+            res.status(200).json({status : 200 , data : walletDetails[0]});
         } catch (error) {
             console.error(error);
-            res.status(500).json({ error: error.message });
+            res.status(500).json({status : 500 , error: error.message });
         }
     }
     async get_all_payment_requests(req, res) {
@@ -108,11 +108,11 @@ class UserController {
             if (!get_data.length) {
                 return res.status(404).json({ message: 'withdrawal_requests not found' });
             }
-            res.status(200).json(get_data);
+            res.status(200).json({status : 200 , get_data});
 
         } catch (error) {
             console.error(error);
-            res.status(500).json({ error: error.message });
+            res.status(500).json({ status : 500 ,error: error.message });
         }
     }
     async get_payment_details(req, res) {
@@ -122,10 +122,10 @@ class UserController {
             if (!payment_dta.length) {
                 return res.status(400).json({ message: 'payment withdrawal id not found' });
             }
-            res.status(200).json(payment_dta);
+            res.status(200).json({status  :200 , payment_dta});
         } catch (error) {
             console.error(error);
-            res.status(500).json({ error: error.message });
+            res.status(500).json({ status : 500 , error: error.message });
         }
 
 
