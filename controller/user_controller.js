@@ -40,8 +40,7 @@ class UserController {
                 `SELECT * FROM wallets WHERE user_id = :user_id`,
                 { replacements: { user_id } }
             );
-
-            if (!wallet.length || wallet[0].balance < amount) {
+            if (!wallet.length || Number(wallet[0].balance) < Number(amount)) {
                 return res.status(400).json({ message: 'Insufficient balance' });
             }
 
