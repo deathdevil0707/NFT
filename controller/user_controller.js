@@ -20,13 +20,14 @@ class UserController {
             }
 
             // Add the selected plan for the user
-            await sequelize.query(
-                `INSERT INTO user_plans (user_id, plan_id, status) VALUES (:user_id, :plan_id, :status)`,
+            const [update_data] =  await sequelize.query(
+                `INSERT INTO user_plans (user_id, plan_id, status) VALUES (:user_id, :plan_id, :status) returning *`,
                 { replacements: { user_id, plan_id, status: 'inactive' } }
             );
+            const [data] = await sequelize.query(`select * from user_plans where user_id = '${user_id}'`)
             
 
-            res.status(201).json({status : 200 ,  message: 'Plan selected successfully!' });
+            res.status(201).json({status : 200 ,  message: 'Plan selected successfully!' , data : data[0] , updated_data : update_data[0]});
         } catch (error) {
             console.error(error);
             res.status(500).json({ status : 500 , error: error.message });
