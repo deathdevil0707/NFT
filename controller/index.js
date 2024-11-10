@@ -95,7 +95,7 @@ export const registerUser = async (req, res) => {
             );
         }
 
-        const token = jwt.sign({ userId: result[0].id , userName : result[0].username }, config.jwt_secret, { expiresIn: '1h' });
+        const token = jwt.sign({ userId: result[0].id , userName : result[0].username }, config.jwt_secret, { expiresIn: '8h' });
         console.log("token",token)
 
         res.status(201).json({
