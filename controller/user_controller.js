@@ -18,16 +18,20 @@ class UserController {
             if (!plan.length) {
                 return res.status(404).json({ message: 'Plan not found' });
             }
+            const [check_Data] =  await sequelize.query(`select * from user_plans where user_id = '${user_id}' and plan_id = '${plan_id}'`)
+            if (check_Data.length > 0 && (check_Data[0].status === 'active' || check_Data[0].status === 'inactive')) {
+               return res.status(400).json({ status: 400, message: 'Plan already selected' });
+            }
 
             // Add the selected plan for the user
             const [update_data] =  await sequelize.query(
                 `INSERT INTO user_plans (user_id, plan_id, status) VALUES (:user_id, :plan_id, :status) returning *`,
                 { replacements: { user_id, plan_id, status: 'inactive' } }
             );
-            const [data] = await sequelize.query(`select * from user_plans where user_id = '${user_id}'`)
+            const [data] = await sequelize.query(`select * from user_plans where user_id = '${user_id}' and plan_id = '${plan_id}'`)
             
 
-            res.status(201).json({status : 200 ,  message: 'Plan selected successfully!' , data : data[0] , updated_data : update_data[0]});
+            res.status(201).json({status : 200 ,  message: 'Plan selected successfully!' ,  updated_data : update_data[0]});
         } catch (error) {
             console.error(error);
             res.status(500).json({ status : 500 , error: error.message });
