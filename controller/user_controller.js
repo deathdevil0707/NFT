@@ -16,7 +16,7 @@ class UserController {
             );
 
             if (!plan.length) {
-                return res.status(404).json({ message: 'Plan not found' });
+                return res.status(404).json({status : 404 , message: 'Plan not found' });
             }
             const [check_Data] =  await sequelize.query(`select * from user_plans where user_id = '${user_id}' and plan_id = '${plan_id}'`)
             if (check_Data.length > 0 && (check_Data[0].status === 'active' || check_Data[0].status === 'inactive')) {
