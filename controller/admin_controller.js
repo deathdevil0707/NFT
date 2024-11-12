@@ -141,9 +141,12 @@ class AdminApiControler {
                 console.log(u)
                 console.log(plans[0])
                 const { id, ...planWithoutId } = plans[0];
+                const [user_data] = await sequelize.query(`select * from users where id = '${u.user_id}'`)
+                console.log(user_data);
+                const { id: userId, ...userWithoutId } = user_data[0];
 
                 // Combine u with the rest of planWithoutId, keeping u.id
-                data.push({ ...u, ...planWithoutId });
+                data.push({ ...u, ...planWithoutId ,...userWithoutId});
             }))
             res.status(200).json({
                 status:200,
