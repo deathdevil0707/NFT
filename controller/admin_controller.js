@@ -89,8 +89,18 @@ class AdminApiControler {
     async get_withdrawal(req, res) {
 
         try {
+            let data = []
             const [requests] = await sequelize.query(`SELECT * FROM withdrawal_requests`);
-            res.status(200).json({status :200 , requests});
+            await Promise.all(requests.map(async (r)=>{
+                const [wallet_data] = await sequelize.query(`select balance from wallets where user_id = '${r.user_id}'`)
+                console.log(wallet_data)
+                const [user_Data] = await sequelize.query(`select * from users where id = '${r.user_id}'`);
+                const{id , ...withoutuserData} = user_Data[0]
+
+                data.push({...r,balance : wallet_data[0].balance,...withoutuserData})
+
+            }))
+            res.status(200).json({status :200 , data});
         } catch (error) {
             console.error(error);
             res.status(500).json({ error: error.message });
