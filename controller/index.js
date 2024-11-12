@@ -17,7 +17,7 @@ const transporter = nodemailer.createTransport({
 const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
 
 export const registerUser = async (req, res) => {
-    const { username, email, password ,referrerCode} = req.body;
+    const { username, email, password ,referrerCode , contact_number} = req.body;
     // const referrerCode = req.query.ref;
 
     try {
@@ -31,9 +31,9 @@ export const registerUser = async (req, res) => {
         }
 
         const [result] = await sequelize.query(
-            `INSERT INTO users (username, email, password_hash, referral_code, referred_by , is_verified)
-             VALUES (:username, :email, :passwordHash, :referralCode, :referredBy , :is_verified)
-             RETURNING id, username, referral_code`,
+            `INSERT INTO users (username, email, password_hash, referral_code, referred_by , is_verified , contact_number)
+             VALUES (:username, :email, :passwordHash, :referralCode, :referredBy , :is_verified , :contact_number)
+             RETURNING id, username, referral_code,contact_number`,
             {
                 replacements: {
                     username,
@@ -41,7 +41,8 @@ export const registerUser = async (req, res) => {
                     passwordHash,
                     referralCode,
                     referredBy: referrer ? referrer.id : null,
-                    is_verified: false
+                    is_verified: false,
+                    contact_number
                 }
                 // type: sequelize.QueryTypes.INSERT
             }

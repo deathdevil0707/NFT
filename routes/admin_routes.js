@@ -12,6 +12,7 @@ admin_router.post('/status_update' , admin_controller.update_withdrawal)
 admin_router.get('/get-all-plans', admin_controller.get_plans)
 admin_router.get('/plan-requests', admin_controller.plan_requests)
 admin_router.post('/plan_status_update' , admin_controller.plan_status_update)
+admin_router.post('/get_user_plan' , admin_controller.get_user_plan)
 
 
 export default admin_router

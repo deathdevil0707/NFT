@@ -221,7 +221,34 @@ class AdminApiControler {
 
 
     }
+    async get_user_plan(req,res){
+        const {user_id} = req.body
+        try {
+            let data = []
+            const [user_plans] = await sequelize.query(`select * from user_plans where user_id = '${user_id}'`);
+            await Promise.all(user_plans.map(async (u) => {
+                const [plans] = await sequelize.query(`select * from plans where id = '${u.plan_id}'`)
+                console.log(u)
+                console.log(plans[0])
+                const { id, ...planWithoutId } = plans[0];
+                const [user_data] = await sequelize.query(`select * from users where id = '${u.user_id}'`)
+                console.log(user_data);
+                const { id: userId, ...userWithoutId } = user_data[0];
 
+                // Combine u with the rest of planWithoutId, keeping u.id
+                data.push({ ...u, ...planWithoutId ,...userWithoutId});
+            }))
+            res.status(200).json({
+                status:200,
+                message: 'data retrieved successfully!',
+                data
+            });
+        } catch (error) {
+            console.error('Error retrieving user plan  data:', error);
+            res.status(500).json({ status : 500 , error: 'Failed to retrieve user plan  data', message: error.message });
+        }
+
+    }
 }
 
 export default new AdminApiControler();
