@@ -249,6 +249,18 @@ class AdminApiControler {
         }
 
     }
+    async update_user_status (req,res){
+        const {user_id,is_verified} = req.body
+        try{
+
+             const [result] =  await sequelize.query(`update users set is_verified = ${is_verified} where id = '${user_id}' returning *`)
+             res.status(200).json({status : 200 ,message : 'User status updated successfully',users_data: result[0]});
+
+        }catch(error){
+            console.error('Error user status update ', error);
+            res.status(500).json({ status : 500 , error: 'Failed to update user status', message: error.message });
+        }
+    }
 }
 
 export default new AdminApiControler();
