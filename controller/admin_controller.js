@@ -42,9 +42,29 @@ class AdminApiControler {
         }
     }
     async get_all_users(req, res) {
+        const data =[];
         try {
             const [users] = await sequelize.query(`SELECT * FROM users`);
-            res.status(200).json({status : 200 ,users: users});
+            let data = []
+
+            await Promise.all(users.map(async (u)=>{
+                const [wallet] = await sequelize.query(` select balance from wallets where user_id = '${u.id}'`)
+                console.log(wallet)
+                const [plans] = await sequelize.query(`select * from user_plans where user_id = '${u.id}'`)
+                console.log(plans)
+                const total_plans = plans.length;
+                let plan_count = 0
+                plans.forEach(element => {
+                   if(element.status = 'active'){
+                    plan_count++;
+                   }
+                    
+                });
+                const total_Active_plans = plan_count
+                data.push({...u,balance : wallet[0]?.balance,plans,total_plans,total_Active_plans})
+            }))
+
+            res.status(200).json({status : 200 ,users_data: data});
         } catch (error) {
             console.error(error);
             res.status(500).json({ status : 500 ,error: error.message });
