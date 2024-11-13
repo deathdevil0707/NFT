@@ -134,6 +134,22 @@ class UserController {
 
 
     }
+    async coin_info(req,res){
+        let data = []
+        try{
+            const [user_plans] = await sequelize.query(`select * from user_plans where user_id = '${req.user.userId}'`)
+            await Promise.all(user_plans.map(async(u)=>{
+                const [coin_data] = await sequelize.query(`select * from plans where id = '${u.plan_id}'`) 
+                const {id , ...coinwithoutid} = coin_data[0]
+                const end_date = new Date(u.start_date);
+                end_date.setDate(end_date.getDate() + 40);
+                data.push({...u,...coinwithoutid,end_date})
+            }))
+            res.status(200).json({status :200 , data : data})
+        }catch(error){
+            res.status(500).json({ status : 500 , error: error.message });
+        }
+    }
 
 }
 

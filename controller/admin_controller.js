@@ -193,6 +193,7 @@ class AdminApiControler {
     async plan_status_update(req, res) {
         try {
             const { plan_request_id ,status} = req.body
+            const start = new Date().toISOString();
             const [plan_request_data] = await sequelize.query(`select * from user_plans where id = '${plan_request_id}'`)
             
             const [plans_data] = await sequelize.query(`select * from plans where id = '${plan_request_data[0].plan_id}'`)
@@ -204,7 +205,7 @@ class AdminApiControler {
             [updated_wallet_Data] = await sequelize.query(`update wallets set balance = '${balance}' returning *`)
             }
             console.log(updated_wallet_Data)
-            const response = await sequelize.query(`update user_plans set status = '${status}' where id = '${plan_request_id}'  returning *`)
+            const response = await sequelize.query(`update user_plans set status = '${status}',start_date = '${start}' where id = '${plan_request_id}'  returning *`)
             console.log(response)
             res.status(201).json({
                 status: 201,
