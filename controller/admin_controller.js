@@ -262,6 +262,31 @@ class AdminApiControler {
             res.status(500).json({ status : 500 , error: 'Failed to update user status', message: error.message });
         }
     }
+    async update_plan(req, res) {
+        const { plan_id, ...fieldsToUpdate } = req.body;
+    
+        try {
+            const setClause = Object.keys(fieldsToUpdate).map(key => `${key} = :${key}`).join(', ');
+            
+            const [updatedRows] = await sequelize.query(
+                `UPDATE plans 
+                 SET ${setClause} 
+                 WHERE  id = :plan_id returning *`,
+                {
+                    replacements: {plan_id, ...fieldsToUpdate }
+                }
+            );
+            console.log(updatedRows[0])
+            // if (updatedRows === 0) {
+            //     return res.status(404).json({ status: 404, message: 'Plan not found or no changes made.' });
+            // }
+    
+            res.status(200).json({ status: 200, message: 'Plan updated successfully!' , data : updatedRows[0] });
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({ status: 500, error: error.message });
+        }
+    }
 }
 
 export default new AdminApiControler();
