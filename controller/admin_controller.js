@@ -337,6 +337,76 @@ class AdminApiControler {
             res.status(500).json({ status: 500, error: error.message });
         }
     }
+
+    // Function to handle admin approval/rejection
+    async handleAdminDecision(req, res) {
+        const { request_id, admin_decision } = req.body; // admin_decision should be 'approved' or 'rejected'
+    
+        try {
+            // Check if the redeem request exists
+            const [redeemRequest] = await sequelize.query(
+                `SELECT * FROM redeem_requests WHERE id = :request_id AND status = 'pending'`,
+                { replacements: { request_id } }
+            );
+    
+            if (!redeemRequest.length) {
+                return res.status(404).json({ status: 404, message: 'Redeem request not found or already processed' });
+            }
+    
+            if (admin_decision === 'approved') {
+                // Update the plan status to 'redeemed'
+                await sequelize.query(
+                    `UPDATE user_plans SET status = 'redeemed' WHERE user_id = :user_id AND plan_id = :plan_id`,
+                    { replacements: { user_id: redeemRequest[0].user_id, plan_id: redeemRequest[0].plan_id } }
+                );
+    
+                // Credit the redeem amount to the user's wallet (assume wallet handling code exists)
+                await sequelize.query(
+                    `UPDATE wallets SET balance = balance + :redeem_amount WHERE user_id = :user_id`,
+                    { replacements: { redeem_amount: redeemRequest[0].redeem_amount, user_id: redeemRequest[0].user_id } }
+                );
+    
+                res.status(200).json({ status: 200, message: 'Redeem request approved and amount credited' });
+            } else if (admin_decision === 'rejected') {
+                // Update the plan status to 'active' again
+                await sequelize.query(
+                    `UPDATE user_plans SET status = 'active' WHERE user_id = :user_id AND plan_id = :plan_id`,
+                    { replacements: { user_id: redeemRequest[0].user_id, plan_id: redeemRequest[0].plan_id } }
+                );
+    
+                res.status(200).json({ status: 200, message: 'Redeem request rejected, plan reactivated' });
+            } else {
+                res.status(400).json({ status: 400, message: 'Invalid admin decision' });
+            }
+    
+            // Update the redeem request status
+            await sequelize.query(
+                `UPDATE redeem_requests SET status = :admin_decision WHERE id = :request_id`,
+                { replacements: { admin_decision, request_id } }
+            );
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({ status: 500, error: error.message });
+        }
+    }
+    async  getAllRedeemRequests(req, res) {
+        try {
+            // Query to get all redeem requests along with user and plan details
+            const [redeemRequests] = await sequelize.query(
+                `select * from redeem_requests`
+            );
+    
+            if (redeemRequests.length === 0) {
+                return res.status(404).json({ status: 404, message: 'No redeem requests found' });
+            }
+    
+            res.status(200).json({ status: 200, data: redeemRequests });
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({ status: 500, error: error.message });
+        }
+    }
+    
     
 }
 

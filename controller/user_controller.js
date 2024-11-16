@@ -248,6 +248,41 @@ class UserController {
 
 
     }
+    async redeemPlan(req, res) {
+        const { user_id, plan_id, redeem_amount } = req.body;
+    
+        try {
+            // Check if the plan exists and is currently active
+            const [userPlan] = await sequelize.query(
+                `SELECT * FROM user_plans WHERE user_id = :user_id AND plan_id = :plan_id AND status = 'active'`,
+                { replacements: { user_id, plan_id } }
+            );
+    
+            if (!userPlan.length) {
+                return res.status(404).json({ status: 404, message: 'Active plan not found' });
+            }
+    
+            // Create a redeem request for admin approval
+            const [redeemRequest] = await sequelize.query(
+                `INSERT INTO redeem_requests (user_id, plan_id, redeem_amount, status) VALUES (:user_id, :plan_id, :redeem_amount, 'pending') RETURNING *`,
+                { replacements: { user_id, plan_id, redeem_amount } }
+            );
+    
+            // Update the plan status to 'inactive' while waiting for admin approval
+            await sequelize.query(
+                `UPDATE user_plans SET status = 'inactive' WHERE user_id = :user_id AND plan_id = :plan_id`,
+                { replacements: { user_id, plan_id } }
+            );
+    
+            res.status(201).json({ status: 201, message: 'Redeem request created, waiting for admin approval', redeem_request: redeemRequest[0] });
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({ status: 500, error: error.message });
+        }
+    }
+    
+    
+    
 
 
 }

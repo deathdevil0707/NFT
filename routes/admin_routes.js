@@ -17,6 +17,8 @@ admin_router.post('/user_status_update' , admin_controller.update_user_status)
 admin_router.post('/update_plan' , admin_controller.update_plan)
 admin_router.post('/approval_wallet_request' , admin_controller.approveWalletRequest)
 admin_router.get('/get_wallet_requests',admin_controller.getAllWalletRequests)
+admin_router.post('/approval_redeem_plan' , admin_controller.handleAdminDecision)
+admin_router.get('/get_redeem_requests',admin_controller.getAllRedeemRequests)
 
 
 
