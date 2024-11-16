@@ -287,6 +287,57 @@ class AdminApiControler {
             res.status(500).json({ status: 500, error: error.message });
         }
     }
+    async  approveWalletRequest(req, res) {
+        const { request_id } = req.body;
+    
+        try {
+            // Find and update the wallet request status to 'approved'
+            const [request] = await sequelize.query(
+                `UPDATE wallet_requests 
+                SET status = 'approved', approved_at = CURRENT_TIMESTAMP 
+                WHERE id = :request_id AND status = 'pending' RETURNING *`,
+                { replacements: { request_id } }
+            );
+    
+            if (!request.length) {
+                return res.status(404).json({ status: 404, message: 'Request not found or already processed' });
+            }
+    
+            // Credit the amount to the user's wallet
+            const userId = request[0].user_id;
+            const amount = request[0].amount;
+    
+            await sequelize.query(
+                `UPDATE wallets SET balance = balance + :amount WHERE user_id = :user_id`,
+                { replacements: { amount, user_id: userId } }
+            );
+    
+            res.status(200).json({ status: 200, message: 'Wallet request approved and amount credited!', request: request[0] });
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({ status: 500, error: error.message });
+        }
+    }
+    async getAllWalletRequests(req, res) {
+        try {
+            // Query to get all wallet requests
+            const [walletRequests] = await sequelize.query(
+                `SELECT * FROM wallet_requests ORDER BY created_at DESC`
+            );
+    
+            // Check if there are any wallet requests
+            if (!walletRequests.length) {
+                return res.status(404).json({ status: 404, message: 'No wallet requests found' });
+            }
+    
+            // Send the wallet requests in the response
+            res.status(200).json({ status: 200, data: walletRequests });
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({ status: 500, error: error.message });
+        }
+    }
+    
 }
 
 export default new AdminApiControler();

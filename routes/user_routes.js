@@ -13,6 +13,7 @@ user_router.get('/user-wallet',user_controller.user_wallet)
 user_router.get('/payment-requests',user_controller.get_all_payment_requests)
 user_router.post('/withdrawal-status',user_controller.get_payment_details)
 user_router.get('/user-coin-info',user_controller.coin_info)
+user_router.post('/add_wallet_amount',user_controller.add_wallet_amount)
 
 
 export default user_router
