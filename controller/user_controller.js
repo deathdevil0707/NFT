@@ -280,6 +280,68 @@ class UserController {
             res.status(500).json({ status: 500, error: error.message });
         }
     }
+    async deduct_wallet_amount(req, res) {
+        try {
+            const { user_id } = req.body;
+    
+            // Fetching the amount to be deducted from the spin_wheel_config table
+            const [config_data] = await sequelize.query(`SELECT amount_deducted_per_spin FROM spin_wheel_config LIMIT 1`);
+    
+            if (config_data.length === 0) {
+                return res.status(404).json({ message: 'Spin wheel configuration not found' });
+            }
+    
+            const amountToDeduct = config_data[0].amount_deducted_per_spin;
+    
+            // Deduct the amount from the user's wallet
+            const [update_wallet] = await sequelize.query(
+                `UPDATE wallets SET balance = balance - ${amountToDeduct} 
+                 WHERE user_id = '${user_id}' AND balance >= ${amountToDeduct} RETURNING *`
+            );
+    
+            if (update_wallet.length === 0) {
+                return res.status(400).json({ message: 'Insufficient balance or user not found' });
+            }
+    
+            res.status(200).json({ 
+                status:200,
+                message: 'Amount deducted successfully', 
+                data: update_wallet[0] 
+            });
+        } catch (error) {
+            console.error('Error deducting amount from wallet:', error);
+            res.status(500).json({ status:500,message: 'Internal server error', error: error.message });
+        }
+    }
+    async add_amount_to_wallet(req, res) {
+        try {
+            const { amount, user_id } = req.body;
+    
+            if (!amount || !user_id) {
+                return res.status(400).json({ message: 'Amount and user ID are required' });
+            }
+    
+            // Add the amount to the user's wallet
+            const [update_wallet] = await sequelize.query(
+                `UPDATE wallets SET balance = balance + ${amount} 
+                 WHERE user_id = '${user_id}' RETURNING *`
+            );
+    
+            if (update_wallet.length === 0) {
+                return res.status(404).json({ message: 'User not found' });
+            }
+    
+            res.status(200).json({
+                status:200,
+                message: 'Amount added successfully',
+                data: update_wallet[0]
+            });
+        } catch (error) {
+            console.error('Error adding amount to wallet:', error);
+            res.status(500).json({status :500, message: 'Internal server error', error: error.message });
+        }
+    }
+    
     
     
     

@@ -406,6 +406,33 @@ class AdminApiControler {
             res.status(500).json({ status: 500, error: error.message });
         }
     }
+    async spin_wheel_config(req, res) {
+        try {
+            const { amount } = req.body;
+    
+            if (!amount) {
+                return res.status(400).json({ message: 'Amount is required' });
+            }
+    
+            const [updated_result] = await sequelize.query(
+                `UPDATE spin_wheel_config SET amount_deducted_per_spin = '${amount}' RETURNING *`
+            );
+    
+            if (updated_result.length === 0) {
+                return res.status(404).json({ message: 'No configuration found to update' });
+            }
+    
+            res.status(200).json({
+                status:200,
+                message: 'Configuration updated successfully',
+                data: updated_result
+            });
+        } catch (error) {
+            console.error('Error updating spin wheel configuration:', error);
+            res.status(500).json({ status:500,message: 'Internal server error', error: error.message });
+        }
+    }
+    
     
     
 }
