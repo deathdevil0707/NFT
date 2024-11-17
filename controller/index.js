@@ -17,23 +17,58 @@ const transporter = nodemailer.createTransport({
 const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
 
 export const registerUser = async (req, res) => {
-    const { username, email, password, referrerCode, contact_number } = req.body;
-    // const referrerCode = req.query.ref;
+    const { username, email, password, contact_number } = req.body;
+    const referrerCode = req.query.ref;
 
     try {
-        const passwordHash = await bcrypt.hash(password, 10)
+        const passwordHash = await bcrypt.hash(password, 10);
         const referralCode = `${username}_${uuidv4().slice(0, 8)}`;
         let referrer = null;
 
         if (referrerCode) {
-            const [referrerQuery] = await sequelize.query(`SELECT id FROM users WHERE referral_code = '${referrerCode}'`);
+            const [referrerQuery] = await sequelize.query(
+                `SELECT id FROM users WHERE referral_code = '${referrerCode}'`
+            );
             referrer = referrerQuery[0];
+        }
+        // const ref_link =  `https://node-nft.onrender.com/register?ref=${referralCode}`
+
+        // Check if the user already has a referrer
+        const [existingReferrer] = await sequelize.query(
+            `SELECT referred_by FROM users WHERE email = :email OR contact_number = :contact_number`,
+            {
+                replacements: { email, contact_number },
+                type: sequelize.QueryTypes.SELECT
+            }
+        );
+
+        if (existingReferrer && existingReferrer.referred_by !== null) {
+            return res.status(400).json({
+                status: 400,
+                message: 'User already has a referrer.'
+            });
+        }
+
+        // Check if user ID already has a referrer
+        const [referralCheck] = await sequelize.query(
+            `SELECT id FROM referrals WHERE user_id = (SELECT id FROM users WHERE email = :email OR contact_number = :contact_number)`,
+            {
+                replacements: { email, contact_number },
+                type: sequelize.QueryTypes.SELECT
+            }
+        );
+        
+        if (referralCheck) {
+            return res.status(400).json({
+                status: 400,
+                message: 'User already has an existing referrer.'
+            });
         }
 
         const [result] = await sequelize.query(
-            `INSERT INTO users (username, email, password_hash, referral_code, referred_by , is_verified , contact_number)
-             VALUES (:username, :email, :passwordHash, :referralCode, :referredBy , :is_verified , :contact_number)
-             RETURNING id, username, referral_code,contact_number`,
+            `INSERT INTO users (username, email, password_hash, referral_code, referred_by, is_verified, contact_number)
+             VALUES (:username, :email, :passwordHash, :referralCode, :referredBy, :is_verified, :contact_number , :referral_link)
+             RETURNING id, username, referral_code, contact_number , referral_link`,
             {
                 replacements: {
                     username,
@@ -42,22 +77,23 @@ export const registerUser = async (req, res) => {
                     referralCode,
                     referredBy: referrer ? referrer.id : null,
                     is_verified: false,
-                    contact_number
+                    contact_number,
+                    referralLink: `https://node-nft.onrender.com/register?ref=${referralCode}`
+
                 }
-                // type: sequelize.QueryTypes.INSERT
             }
         );
-        console.log("result", result)
+        console.log("result", result);
 
         // Generate OTP
         const otpCode = generateOTP();
         const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes from now
 
         // Store OTP in the database
-        await sequelize.query(`
-            INSERT INTO otps (email, otp_code, expires_at, used)
-            VALUES ('${email}', '${otpCode}', '${expiresAt.toISOString()}', false)
-        `);
+        await sequelize.query(
+            `INSERT INTO otps (email, otp_code, expires_at, used)
+             VALUES ('${email}', '${otpCode}', '${expiresAt.toISOString()}', false)`
+        );
 
         try {
             const emailResponse = await transporter.sendMail({
@@ -83,12 +119,14 @@ export const registerUser = async (req, res) => {
         );
 
         if (referrer) {
-            await sequelize.query(`UPDATE users SET referral_count = referral_count + 1 WHERE id = ${referrer.id}`, []);
+            await sequelize.query(
+                `UPDATE users SET referral_count = referral_count + 1 WHERE id = ${referrer.id}`
+            );
             await sequelize.query(
                 `INSERT INTO referrals (user_id, referrer_id) VALUES (:userId, :referrerId)`,
                 {
                     replacements: {
-                        userId: result[0].id,  // Adjust based on the structure of `result`
+                        userId: result[0].id,
                         referrerId: referrer.id
                     },
                     type: sequelize.QueryTypes.INSERT
@@ -97,20 +135,20 @@ export const registerUser = async (req, res) => {
         }
 
         const token = jwt.sign({ userId: result[0].id, userName: result[0].username }, config.jwt_secret, { expiresIn: '8h' });
-        console.log("token", token)
+        console.log("token", token);
 
         res.status(201).json({
             status: 201,
             message: 'User registered successfully!',
             token,
-            referralLink: `http://yourapp.com/register?ref=${referralCode}`,
+            referralLink: `https://node-nft.onrender.com/register?ref=${referralCode}`,
             user: result[0]
         });
     } catch (error) {
-        console.log(error)
+        console.log(error);
         res.status(500).json({ status: 500, error: error.message });
     }
-};
+}
 export const verify_otp = async (req, res) => {
     const { email, otp } = req.body;
 
