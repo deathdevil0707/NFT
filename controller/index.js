@@ -17,7 +17,7 @@ const transporter = nodemailer.createTransport({
 const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
 
 export const registerUser = async (req, res) => {
-    const { username, email, password ,referrerCode , contact_number} = req.body;
+    const { username, email, password, referrerCode, contact_number } = req.body;
     // const referrerCode = req.query.ref;
 
     try {
@@ -47,7 +47,7 @@ export const registerUser = async (req, res) => {
                 // type: sequelize.QueryTypes.INSERT
             }
         );
-        console.log("result",result)
+        console.log("result", result)
 
         // Generate OTP
         const otpCode = generateOTP();
@@ -96,11 +96,11 @@ export const registerUser = async (req, res) => {
             );
         }
 
-        const token = jwt.sign({ userId: result[0].id , userName : result[0].username }, config.jwt_secret, { expiresIn: '8h' });
-        console.log("token",token)
+        const token = jwt.sign({ userId: result[0].id, userName: result[0].username }, config.jwt_secret, { expiresIn: '8h' });
+        console.log("token", token)
 
         res.status(201).json({
-            status : 201,
+            status: 201,
             message: 'User registered successfully!',
             token,
             referralLink: `http://yourapp.com/register?ref=${referralCode}`,
@@ -108,10 +108,10 @@ export const registerUser = async (req, res) => {
         });
     } catch (error) {
         console.log(error)
-        res.status(500).json({ status : 500 , error: error.message });
+        res.status(500).json({ status: 500, error: error.message });
     }
 };
-export const verify_otp = async (req,res) =>{
+export const verify_otp = async (req, res) => {
     const { email, otp } = req.body;
 
     try {
@@ -149,10 +149,10 @@ export const verify_otp = async (req,res) =>{
             UPDATE users SET is_verified = true WHERE email = '${email}'
         `);
 
-        res.status(200).json({ statua : 200 , message: 'Email verified successfully' });
+        res.status(200).json({ statua: 200, message: 'Email verified successfully' });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ status : 500 ,error: 'Internal server error' });
+        res.status(500).json({ status: 500, error: 'Internal server error' });
     }
 }
 export const loginUser = async (req, res) => {
@@ -167,11 +167,11 @@ export const loginUser = async (req, res) => {
             return res.status(400).json({ message: 'Invalid email or password' });
         }
 
-        const token = jwt.sign({ userId: user.id , userName : user.username } ,config.jwt_secret, { expiresIn: '8h' });
-        res.json({ status : 200 , message: 'Login successful', token ,user});
+        const token = jwt.sign({ userId: user.id, userName: user.username }, config.jwt_secret, { expiresIn: '8h' });
+        res.json({ status: 200, message: 'Login successful', token, user });
     } catch (error) {
         console.log(error)
-        res.status(500).json({ status : 500 , error: error.message });
+        res.status(500).json({ status: 500, error: error.message });
     }
 };
 
@@ -221,10 +221,10 @@ export const forgotPassword = async (req, res) => {
             throw new Error('Failed to send OTP email. Please try again.');
         }
 
-        res.status(200).json({status : 200 ,  message: 'OTP sent to your email for password reset' });
+        res.status(200).json({ status: 200, message: 'OTP sent to your email for password reset' });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ status : 500 ,error: error.message });
+        res.status(500).json({ status: 500, error: error.message });
     }
 };
 
@@ -245,7 +245,7 @@ export const verifyOtpAndResetPassword = async (req, res) => {
         const otpRecord = otpQuery[0];
 
         // Check if OTP is expired
-       
+
         if (new Date(otpRecord.expires_at) < new Date()) {
             return res.status(400).json({ error: 'OTP has expired' });
         }
@@ -264,12 +264,35 @@ export const verifyOtpAndResetPassword = async (req, res) => {
         );
         const [user] = await sequelize.query(`select * from users where email = '${email}'`)
 
-        res.status(200).json({status : 200 ,  message: 'Password has been reset successfully' , user : user[0]});
+        res.status(200).json({ status: 200, message: 'Password has been reset successfully', user: user[0] });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ status : 500 , error: error.message });
+        res.status(500).json({ status: 500, error: error.message });
     }
 };
+export const get_spin_wheel_config = async (req, res) => {
+    try {
+
+        // Fetch the spin wheel configuration
+        const [config_data] = await sequelize.query(`SELECT * FROM spin_wheel_config`);
+
+        if (config_data.length === 0) {
+            return res.status(404).json({ message: 'Spin wheel configuration not found' });
+        }
+
+        // Process response based on the role
+        // Return complete configuration for admin
+        res.status(200).json({
+            message: 'Spin wheel configuration for admin',
+            data: config_data[0]
+        });
+
+    } catch (error) {
+        console.error('Error fetching spin wheel configuration:', error);
+        res.status(500).json({ message: 'Internal server error', error: error.message });
+    }
+}
+
 
 
 
