@@ -243,7 +243,7 @@ class UserController {
             values('${user_id}' , '${amount}' , 'pending' ) returning *
             `);
 
-            res.status(201).json({status:201,message : 'request has been sent to the admin', data : update_data[0]})
+            res.status(201).json({ status: 201, message: 'request has been sent to the admin', data: update_data[0] })
         } catch (error) {
             console.log(error)
         }
@@ -253,30 +253,30 @@ class UserController {
     }
     async redeemPlan(req, res) {
         const { user_id, plan_id, redeem_amount } = req.body;
-    
+
         try {
             // Check if the plan exists and is currently active
             const [userPlan] = await sequelize.query(
                 `SELECT * FROM user_plans WHERE user_id = :user_id AND plan_id = :plan_id AND status = 'active'`,
                 { replacements: { user_id, plan_id } }
             );
-    
+
             if (!userPlan.length) {
                 return res.status(404).json({ status: 404, message: 'Active plan not found' });
             }
-    
+
             // Create a redeem request for admin approval
             const [redeemRequest] = await sequelize.query(
                 `INSERT INTO redeem_requests (user_id, plan_id, redeem_amount, status) VALUES (:user_id, :plan_id, :redeem_amount, 'pending') RETURNING *`,
                 { replacements: { user_id, plan_id, redeem_amount } }
             );
-    
+
             // Update the plan status to 'inactive' while waiting for admin approval
             await sequelize.query(
                 `UPDATE user_plans SET status = 'inactive' WHERE user_id = :user_id AND plan_id = :plan_id`,
                 { replacements: { user_id, plan_id } }
             );
-    
+
             res.status(201).json({ status: 201, message: 'Redeem request created, waiting for admin approval', redeem_request: redeemRequest[0] });
         } catch (error) {
             console.error(error);
@@ -286,68 +286,84 @@ class UserController {
     async deduct_wallet_amount(req, res) {
         try {
             const { user_id } = req.body;
-    
+
             // Fetching the amount to be deducted from the spin_wheel_config table
             const [config_data] = await sequelize.query(`SELECT amount_deducted_per_spin FROM spin_wheel_config LIMIT 1`);
-    
+
             if (config_data.length === 0) {
                 return res.status(404).json({ message: 'Spin wheel configuration not found' });
             }
-    
+
             const amountToDeduct = config_data[0].amount_deducted_per_spin;
-    
+
             // Deduct the amount from the user's wallet
             const [update_wallet] = await sequelize.query(
                 `UPDATE wallets SET balance = balance - ${amountToDeduct} 
                  WHERE user_id = '${user_id}' AND balance >= ${amountToDeduct} RETURNING *`
             );
-    
+
             if (update_wallet.length === 0) {
                 return res.status(400).json({ message: 'Insufficient balance or user not found' });
             }
-    
-            res.status(200).json({ 
-                status:200,
-                message: 'Amount deducted successfully', 
-                data: update_wallet[0] 
+
+            res.status(200).json({
+                status: 200,
+                message: 'Amount deducted successfully',
+                data: update_wallet[0]
             });
         } catch (error) {
             console.error('Error deducting amount from wallet:', error);
-            res.status(500).json({ status:500,message: 'Internal server error', error: error.message });
+            res.status(500).json({ status: 500, message: 'Internal server error', error: error.message });
         }
     }
     async add_amount_to_wallet(req, res) {
         try {
             const { amount, user_id } = req.body;
-    
+
             if (!amount || !user_id) {
                 return res.status(400).json({ message: 'Amount and user ID are required' });
             }
-    
+
             // Add the amount to the user's wallet
             const [update_wallet] = await sequelize.query(
                 `UPDATE wallets SET balance = balance + ${amount} 
                  WHERE user_id = '${user_id}' RETURNING *`
             );
-    
+
             if (update_wallet.length === 0) {
                 return res.status(404).json({ message: 'User not found' });
             }
-    
+
             res.status(200).json({
-                status:200,
+                status: 200,
                 message: 'Amount added successfully',
                 data: update_wallet[0]
             });
         } catch (error) {
             console.error('Error adding amount to wallet:', error);
-            res.status(500).json({status :500, message: 'Internal server error', error: error.message });
+            res.status(500).json({ status: 500, message: 'Internal server error', error: error.message });
         }
     }
-    
-    
-    
-    
+    async get_User(req, res) {
+        try {
+           
+            // Using Sequelize to fetch all user data
+            const [users] = await sequelize.query(`SELECT * FROM users where id = '${req.user.userId}'`);
+
+            if (users.length === 0) {
+                return res.status(404).json({ status: 404, message: 'No users found' });
+            }
+
+            res.status(200).json({ status: 200, message: 'Users fetched successfully', data: users[0] });
+        } catch (error) {
+            console.error('Error fetching users:', error);
+            res.status(500).json({ status: 500, error: 'Internal server error' });
+        }
+    };
+
+
+
+
 
 
 }

@@ -17,6 +17,7 @@ user_router.post('/add_wallet_amount',user_controller.add_wallet_amount)
 user_router.post('/redeem_plan',user_controller.redeemPlan)
 user_router.post('/spin_wheel_amount_deduct',user_controller.deduct_wallet_amount)
 user_router.post('/spin_wheel_amount_add',user_controller.add_amount_to_wallet)
+user_router.get('/get_user',user_controller.get_User)
 
 
 export default user_router
