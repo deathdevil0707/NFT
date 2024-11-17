@@ -87,8 +87,11 @@ class UserController {
                 return res.status(400).json({ status: 400, message: 'Wallet not found' });
             }
 
-            const planAmount = plan[0].amount; // Assuming the plan table has an amount field
-            const userBalance = wallet[0].balance;
+            const planAmount = Number(plan[0].amount); // Assuming the plan table has an amount field
+            const userBalance = Number(wallet[0].balance);
+            console.log(userBalance)
+            console.log(planAmount)
+            console.log(userBalance < planAmount)
 
             if (userBalance < planAmount) {
                 // Create a wallet request for admin approval
@@ -101,7 +104,7 @@ class UserController {
 
             // Deduct the amount from the wallet and activate the plan
             await sequelize.query(
-                `UPDATE user_wallets SET balance = balance - :planAmount WHERE user_id = :user_id`,
+                `UPDATE wallets SET balance = balance - :planAmount WHERE user_id = :user_id`,
                 { replacements: { planAmount, user_id } }
             );
 
